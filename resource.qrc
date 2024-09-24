@@ -1,0 +1,29 @@
+<RCC>
+    <qresource prefix="/pic">
+        <file>zb.png</file>
+        <file>pic/add_bottom.png</file>
+        <file>pic/add_left.png</file>
+        <file>pic/add_right.png</file>
+        <file>pic/add_top.png</file>
+        <file>pic/branch_close.png</file>
+        <file>pic/branch_open.png</file>
+        <file>pic/calendar_nextmonth.png</file>
+        <file>pic/calendar_prevmonth.png</file>
+        <file>pic/checkbox_checked_disable.png</file>
+        <file>pic/checkbox_checked.png</file>
+        <file>pic/checkbox_parcial_disable.png</file>
+        <file>pic/checkbox_parcial.png</file>
+        <file>pic/checkbox_unchecked_disable.png</file>
+        <file>pic/checkbox_unchecked.png</file>
+        <file>pic/radiobutton_checked_disable.png</file>
+        <file>pic/radiobutton_checked.png</file>
+        <file>pic/radiobutton_unchecked_disable.png</file>
+        <file>pic/radiobutton_unchecked.png</file>
+    </qresource>
+    <qresource prefix="/">
+        <file>my_qss.qss</file>
+        <file>darkblack.css</file>
+    </qresource>
+    <qresource prefix="/qmldesigner"/>
+    <qresource prefix="/qml"/>
+</RCC>
