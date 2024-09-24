@@ -141,7 +141,7 @@ public:
 
         float hand_data[2][DOF_HAND];
         float vcap_data[2];
-
+        float agv_speed[3];
     };
 
     struct MotionData
@@ -150,10 +150,15 @@ public:
 
     };
 
+    struct TransformMatrix{
+        float matrix[4][4];
+    };
+
 
     struct RemoteComputerData
     {
-
+        TransformMatrix camera_to_shoulder_left;
+        TransformMatrix camera_to_shoulder_right;
     };
 
     struct RobotCmd
@@ -185,7 +190,9 @@ public:
 
     };
 
-
+    struct Test{
+        float test[16];
+    };
 
 
 

@@ -110,7 +110,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>192.168.1.204</string>
+        <string>192.168.112.96</string>
        </property>
       </widget>
       <widget class="QPushButton" name="pushButton_enable">
@@ -175,10 +175,10 @@
         </rect>
        </property>
        <property name="text">
-        <string>192.168.1.72</string>
+        <string>127.0.0.1</string>
        </property>
       </widget>
-      <widget class="QLineEdit" name="lineEdit_rcp_recieve">
+      <widget class="QLineEdit" name="lineEdit_device_ip">
        <property name="geometry">
         <rect>
          <x>270</x>
@@ -201,7 +201,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Local WiFi IP</string>
+        <string>Device IP</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_26">
@@ -214,7 +214,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>Local LAN IP</string>
+        <string>Simulation IP</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_65">
@@ -1168,6 +1168,32 @@
         <string>Modify</string>
        </property>
       </widget>
+      <widget class="QPushButton" name="pushButton_rcp_record_calibrate">
+       <property name="geometry">
+        <rect>
+         <x>490</x>
+         <y>60</y>
+         <width>80</width>
+         <height>23</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Calibrate</string>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_rcp_record_stamp">
+       <property name="geometry">
+        <rect>
+         <x>400</x>
+         <y>60</y>
+         <width>80</width>
+         <height>23</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Stamp</string>
+       </property>
+      </widget>
      </widget>
      <widget class="QPushButton" name="pushButton_rcp_motion_stop">
       <property name="geometry">
@@ -1488,6 +1514,32 @@
       </property>
       <property name="text">
        <string>Auto</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_rcp_lock">
+      <property name="geometry">
+       <rect>
+        <x>330</x>
+        <y>290</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Lock</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="pushButton_rcp_unlock">
+      <property name="geometry">
+       <rect>
+        <x>430</x>
+        <y>290</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Unlock</string>
       </property>
      </widget>
     </widget>

@@ -44,6 +44,8 @@ OpenLoongControler::OpenLoongControler(QWidget *parent) :
     //rcp timer
     rcp_timer = new QTimer(this);
     connect(rcp_timer, &QTimer::timeout, this, &OpenLoongControler::handleRCP);
+    rcp_run_timer = new QTimer(this);
+    connect(rcp_run_timer, &QTimer::timeout, this, &OpenLoongControler::handleRCP_run);
 
     //signal to demonstrator thread
     connect(this,&OpenLoongControler::startRecording,&thread_demonstrator,&ThreadDemonstrator::startRecording);
@@ -95,6 +97,10 @@ void OpenLoongControler::on_pushButton_oneshot_idle_clicked()
 //    robot_system->robot_data->robot_info_.robot_state_.motion_mode = 0;
     bool_manualEnabled = false;
     ui->label_manual_keyboard->setText("Off");
+    ui->label_rcp_mora->setText("Auto");
+    robot_system->x_v=0.0;
+    robot_system->y_v=0.0;
+    robot_system->z_angle=0.0;
 }
 
 void OpenLoongControler::on_pushButton_oneshot_manual_clicked()
@@ -146,15 +152,26 @@ void OpenLoongControler::on_pushButton_reset_clicked()
 void OpenLoongControler::on_pushButton_init_connect_clicked()
 {
     std::string robot_ip = ui->lineEdit_robot_ip->text().toStdString();
+    std::string server_ip = ui->lineEdit_server_ip->text().toStdString();
+    std::string device_ip = ui->lineEdit_device_ip->text().toStdString();
     robot_system->SetCmdComm(robot_ip.data(), PORT_MOTION_CMD);
     robot_system->SetManualComm(robot_ip.data(), PORT_MOTION_JOINT);
     robot_system->SetMotionCaptureComm(robot_ip.data(), PORT_MOTION_EE);
-
+    robot_system->SetFk(server_ip.data(),5005);
+    robot_system->SetRemoteDevice(device_ip.data(),0x5000);
+    robot_system->SetAgv("192.168.1.41",3838);
 
     clients_com_timer = new QTimer(this);
     connect(clients_com_timer,&QTimer::timeout, robot_system, &RobotSystem::UdpClientsRun);
-
     clients_com_timer->start(2);
+
+    clients_agv = new QTimer(this);
+    connect(clients_agv,&QTimer::timeout, robot_system, &RobotSystem::UdpClientAgv);
+    clients_agv->start(100);
+
+//    clients_remote_timer = new QTimer(this);
+//    connect(clients_remote_timer,&QTimer::timeout, robot_system, &RobotSystem::UdpClientRemoteRun);
+//    clients_remote_timer->start(10);
 
 }
 
@@ -374,8 +391,18 @@ void OpenLoongControler::keyReleaseEvent(QKeyEvent *event)
 //    keyPressedMap[event->key()] = false;
     if(!event->isAutoRepeat())
         pressedKeys.removeAll(event->key());
-    if(pressedKeys.isEmpty())
-        keyRespondTimer->stop();}
+    if(pressedKeys.isEmpty()){
+        keyRespondTimer->stop();
+        if (event->key() == Qt::Key_Left || event->key() == Qt::Key_Right) {
+            robot_system->z_angle = 0.0;
+//            qInfo() << "Stopped turning";
+        }
+        if (event->key() == Qt::Key_Up || event->key() == Qt::Key_Down) {
+            robot_system->x_v = 0.0;
+//            qInfo() << "Stopped moving forward/backward";
+        }
+    }
+}
 
 void OpenLoongControler::handleKeyPress(){
     if(robot_system->motion_mode==RobotSystem::MANUAL){
@@ -465,6 +492,7 @@ void OpenLoongControler::handleKeyPress(){
     }else if(robot_system->motion_mode==RobotSystem::MOTION_CAPTURE){
         for (int key : pressedKeys) {
             float currentValue = 0.0f;
+            if(!pressedKeys.contains(Qt::Key_Alt)){
                 if (map_rcp.find(key) != map_rcp.end()) {
                     currentValue = robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[map_rcp[key].row][map_rcp[key].col];
                     cout << "Key: " << key << endl;
@@ -481,9 +509,40 @@ void OpenLoongControler::handleKeyPress(){
                     //map_pos[key].label->setText(QString::number(currentValue));
                     robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[map_rcp[key].row][map_rcp[key].col] = currentValue;
                 }
+            }else{
+                if(map_pos_alt.find(key) != map_pos_alt.end()){
+                    currentValue = robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_hand[map_pos_alt[key].row][map_pos_alt[key].col];
+                    cout << "Key: " << key << endl;
+                    cout << "Value: " << currentValue << endl;
+
+                    currentValue = map_pos_alt[key].add_minus == ADD ? currentValue + manual_step/1000 : currentValue - manual_step/1000;
+                    //currentValue = manual_step;
+                    if(currentValue<0)currentValue=0;
+                    qInfo()<<currentValue;
+                    robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[map_pos_alt[key].row][map_pos_alt[key].col] = currentValue;
+                }
+            }
         }
     }
 
+    if (pressedKeys.contains(Qt::Key_Left)){
+        qInfo() << "Left Key: ";
+        robot_system->z_angle = 0.1;
+    }else if(pressedKeys.contains(Qt::Key_Right)){
+        qInfo() << "Right Key: ";
+        robot_system->z_angle = -0.1;
+    }else {
+        robot_system->z_angle = 0.0;  // 停止转向
+    }
+    if (pressedKeys.contains(Qt::Key_Up)){
+        qInfo() << "Up Key: ";
+        robot_system->x_v = 0.1;
+    }else if(pressedKeys.contains(Qt::Key_Down)){
+        qInfo() << "Down Key: ";
+        robot_system->x_v = -0.1;
+    }else if(!pressedKeys.contains(Qt::Key_Up) && !pressedKeys.contains(Qt::Key_Down)) {
+        robot_system->x_v = 0.0;  // 停止转向
+    }
 }
 
 void OpenLoongControler::ShowInfomation(){
@@ -1092,12 +1151,6 @@ void OpenLoongControler::handleDemonstrator_run(){
         robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_exp_hand[1][4]=interpolated_data[24];
         robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_exp_hand[1][5]=interpolated_data[25];
         robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_vcap_hand[0] = interpolated_data[26];
-        if(rgb){
-            //qInfo()<<interpolated_data[27]<<" "<<interpolated_data[28]<<" "<<interpolated_data[29];
-            R_value=interpolated_data[27];
-            G_value=interpolated_data[28];
-            B_value=interpolated_data[29];
-        }
         //robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_vcap_hand[1] = demonstrate_data[curr_demonstrate_index][27];
     }else{
         demonstrator_run_timer->stop();
@@ -1242,15 +1295,287 @@ void OpenLoongControler::on_pushButton_rcp_record_load_clicked()
     }
 }
 
+void OpenLoongControler::on_pushButton_rcp_record_modify_clicked_old()
+{
+    float x=-577.228; float y=-32.4491; float z=104.332;
+    float rx = 0; float ry = 0; float rz = 0;
+    delta_r_x=0; delta_r_y=0; delta_r_z=0;
+    delta_r_rx =0; delta_r_ry=0; delta_r_rz=0;
+    int avg=10;
+    for(int j=0;j<avg;j++){
+        delta_r_x += robot_system->robot_data->robot_info_.motion_data_recieve_.left_arm_px-x;
+        delta_r_y += robot_system->robot_data->robot_info_.motion_data_recieve_.left_arm_py-y;
+        delta_r_z += robot_system->robot_data->robot_info_.motion_data_recieve_.left_arm_pz-z;
+        delta_r_rx += robot_system->robot_data->robot_info_.motion_data_recieve_.left_arm_rx-rx;
+        delta_r_ry += robot_system->robot_data->robot_info_.motion_data_recieve_.left_arm_ry-ry;
+        delta_r_rz += robot_system->robot_data->robot_info_.motion_data_recieve_.left_arm_rz-rz;
+        QThread::msleep(200);
+    }
+    delta_r_x /= avg;    delta_r_y /= avg;    delta_r_z /= avg;
+    delta_r_rx /= avg;    delta_r_ry /= avg;    delta_r_rz /= avg;
+    float tf = demonstrate_data.size()/100.0;
+    unsigned long i;
+    stamp = 0.25;
+    for(i=0;i<stamp*demonstrate_data.size();++i){
+        float theta_r_x = 10.0*delta_r_x/std::pow(tf,3)*pow((i/(stamp*100.0)),3)-15.0*delta_r_x/std::pow(tf,4)*pow((i/25.0),4)+6.0*delta_r_x/std::pow(tf,5)*pow((i/(stamp*100.0)),5);
+        float theta_r_y = 10.0*delta_r_y/std::pow(tf,3)*pow((i/(stamp*100.0)),3)-15.0*delta_r_y/std::pow(tf,4)*pow((i/25.0),4)+6.0*delta_r_y/std::pow(tf,5)*pow((i/(stamp*100.0)),5);
+        float theta_r_z = 10.0*delta_r_z/std::pow(tf,3)*pow((i/(stamp*100.0)),3)-15.0*delta_r_z/std::pow(tf,4)*pow((i/25.0),4)+6.0*delta_r_z/std::pow(tf,5)*pow((i/(stamp*100.0)),5);
+        demonstrate_data[i][3] += theta_r_x;
+        demonstrate_data[i][4] += theta_r_y;
+        demonstrate_data[i][5] += theta_r_z;
+        if(std::sqrt(demonstrate_data[i][3]*demonstrate_data[i][3]+demonstrate_data[i][4]*demonstrate_data[i][4]+demonstrate_data[i][5]*demonstrate_data[i][5])>=590){
+            qDebug()<<"Out of Range!";
+            break;
+        }
+        qInfo()<<demonstrate_data[i][3]<<" "<<demonstrate_data[i][4]<<" "<<demonstrate_data[i][5]<<" "<<theta_r_x<<" "<<theta_r_y<<" "<<theta_r_z;
+        //qInfo()<<i<<" "<<theta_r_x<<" "<<theta_r_y<<" "<<theta_r_z;
+    }
+    while(i<demonstrate_data.size()){
+        demonstrate_data[i][3] += delta_r_x;
+        demonstrate_data[i][4] += delta_r_y;
+        demonstrate_data[i][5] += delta_r_z;
+        if(std::sqrt(demonstrate_data[i][3]*demonstrate_data[i][3]+demonstrate_data[i][4]*demonstrate_data[i][4]+demonstrate_data[i][5]*demonstrate_data[i][5])>=590){
+            qDebug()<<"Out of Range!";
+            break;
+        }
+        //qInfo()<<i<<" ";
+        qInfo()<<demonstrate_data[i][3]<<" "<<demonstrate_data[i][4]<<" "<<demonstrate_data[i][5]<<" "<<delta_r_x<<" "<<delta_r_y<<" "<<delta_r_z;
+        ++i;
+    }
+    qInfo()<<delta_r_x<<" "<<delta_r_y<<" "<<delta_r_z<<" "<<delta_r_rz<<" "<<delta_r_ry<<" "<<delta_r_rx;
+}
+
 void OpenLoongControler::on_pushButton_rcp_record_modify_clicked()
 {
-    float tf = demonstrate_data.size()/100.0;
-    for(unsigned long i=0;i<demonstrate_data.size();++i){
-        float theta_r_x = 10.0*delta_r_x/std::pow(tf,3)*pow((i/100.0),3)-15.0*delta_r_x/std::pow(tf,4)*pow((i/100.0),4)+6.0*delta_r_x/std::pow(tf,5)*pow((i/100.0),5);
-        float theta_r_y = 10.0*delta_r_y/std::pow(tf,3)*pow((i/100.0),3)-15.0*delta_r_y/std::pow(tf,4)*pow((i/100.0),4)+6.0*delta_r_y/std::pow(tf,5)*pow((i/100.0),5);
-        float theta_r_z = 10.0*delta_r_z/std::pow(tf,3)*pow((i/100.0),3)-15.0*delta_r_z/std::pow(tf,4)*pow((i/100.0),4)+6.0*delta_r_z/std::pow(tf,5)*pow((i/100.0),5);
-        qInfo()<<theta_r_x<<" "<<theta_r_y<<" "<<theta_r_z;
+    Eigen::Matrix4f matrix_stcnew_left, matrix_stcnew_right, matrix_stc_inv_left, matrix_stc_inv_right;
+    std::vector<Eigen::Matrix4f> transformation_matrices_left, transformation_matrices_right;
+
+    std::cout << "shoulder to new camera" << std::endl;
+    // receive matrix_stcnew from UDP port 8014
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            matrix_stcnew_left(i, j) = robot_system->robot_data->robot_info_.remote_computer_data_.camera_to_shoulder_left.matrix[i][j];
+            matrix_stcnew_right(i, j) = robot_system->robot_data->robot_info_.remote_computer_data_.camera_to_shoulder_right.matrix[i][j];
+        }
     }
+    std::cout << "left stcnew matrix:" << std::endl;
+    std::cout << matrix_stcnew_left << std::endl;
+    std::cout << "right stcnew matrix:" << std::endl;
+    std::cout << matrix_stcnew_right << std::endl;
+
+//    matrix_cts<<-0.0222983,0.0257587,0.999419,-551.112,
+//    0.671906,-0.739852,0.0340598,576.564,
+//    0.7403,0.672276,-0.000809989,-92.8788,
+//    0,0,0,1;
+//    matrix_stcnew<<-0.0237363,0.0233373,0.999446,-551.326,
+//    0.893276,-0.448391,0.0316848,548.753,
+//    0.448882,0.893533,-0.0102035,-80.6764,
+//    0,0 ,0 ,1;
+
+
+    // Inverse matrix
+    matrix_stc_inv_left = matrix_stc_left.inverse();
+    matrix_stc_inv_right = matrix_stc_right.inverse();
+
+    for (const auto& row : demonstrate_data) {
+        float rz_left = row[0]; float ry_left = row[1]; float rx_left = row[2];
+        float tx_left = row[3]; float ty_left = row[4]; float tz_left = row[5];
+        float rz_right = row[7]; float ry_right = row[8]; float rx_right = row[9];
+        float tx_right = row[10]; float ty_right = row[11]; float tz_right = row[12];
+        //std::cout << tx << " " << ty << " " << tz << std::endl;
+        Eigen::Matrix4f matrix_left = Eigen::Matrix4f::Identity();
+        Eigen::Matrix4f matrix_right = Eigen::Matrix4f::Identity();
+        matrix_left(0, 3) = tx_left;        matrix_left(1, 3) = ty_left;        matrix_left(2, 3) = tz_left;
+        matrix_right(0, 3) = tx_right;      matrix_right(1, 3) = ty_right;      matrix_right(2, 3) = tz_right;
+        Eigen::Matrix3f rZ_left = Eigen::AngleAxisf(rz_left, Eigen::Vector3f::UnitZ()).toRotationMatrix();
+        Eigen::Matrix3f rY_left = Eigen::AngleAxisf(ry_left, Eigen::Vector3f::UnitY()).toRotationMatrix();
+        Eigen::Matrix3f rX_left = Eigen::AngleAxisf(rx_left, Eigen::Vector3f::UnitX()).toRotationMatrix();
+        Eigen::Matrix3f rZ_right = Eigen::AngleAxisf(rz_right, Eigen::Vector3f::UnitZ()).toRotationMatrix();
+        Eigen::Matrix3f rY_right = Eigen::AngleAxisf(ry_right, Eigen::Vector3f::UnitY()).toRotationMatrix();
+        Eigen::Matrix3f rX_right = Eigen::AngleAxisf(rx_right, Eigen::Vector3f::UnitX()).toRotationMatrix();
+
+        // 总的旋转矩阵，定系旋转顺序为 Rz * Ry * Rx
+        Eigen::Matrix3f rotation_matrix_left = rX_left * rY_left * rZ_left;
+        Eigen::Matrix3f rotation_matrix_right = rX_right * rY_right * rZ_right;
+        matrix_left.block<3, 3>(0, 0) = rotation_matrix_left;  // 将 3x3 旋转矩阵插入到 4x4 矩阵中
+        matrix_right.block<3, 3>(0, 0) = rotation_matrix_right;
+//        std::cout << "matrix:" << std::endl;
+//        std::cout << matrix << std::endl;
+
+        matrix_left = matrix_stcnew_left * matrix_stc_inv_left * matrix_left;
+        matrix_right = matrix_stcnew_right * matrix_stc_inv_right * matrix_right;
+
+//        std::cout << "Transform matrix: " << std::endl;
+//        std::cout << matrix << std::endl;
+
+        transformation_matrices_left.push_back(matrix_left);
+        transformation_matrices_right.push_back(matrix_right);
+    }
+
+    //transformation matrix to euler angle
+    for (unsigned long i=0;i<transformation_matrices_left.size();++i) {
+        //left
+        float y_beta_left = atan2(transformation_matrices_left[i](0,2),std::sqrt(transformation_matrices_left[i](0,0)*transformation_matrices_left[i](0,0)+transformation_matrices_left[i](0,1)*transformation_matrices_left[i](0,1)));
+        float x_gamma_left,z_alpha_left;
+        if(std::abs(y_beta_left-M_PI/2.0)<1e-6){
+            x_gamma_left=0; z_alpha_left=atan2(transformation_matrices_left[i](1,0),transformation_matrices_left[i](1,1));
+        }else if(std::abs(y_beta_left-(-M_PI/2.0))<1e-6){
+            x_gamma_left=0;z_alpha_left=atan2(transformation_matrices_left[i](1,0),transformation_matrices_left[i](1,1));
+        }else{
+            z_alpha_left = atan2(-transformation_matrices_left[i](0,1)/std::cos(y_beta_left),transformation_matrices_left[i](0,0)/std::cos(y_beta_left));
+            x_gamma_left = atan2(-transformation_matrices_left[i](1,2)/std::cos(y_beta_left),transformation_matrices_left[i](2,2)/std::cos(y_beta_left));
+        }
+        float x_left = transformation_matrices_left[i](0,3); float y_left=transformation_matrices_left[i](1,3); float z_left=transformation_matrices_left[i](2,3);
+        float length_left = std::sqrt(x_left*x_left+y_left*y_left+z_left*z_left);
+        //right
+        float y_beta_right = atan2(transformation_matrices_right[i](0,2),std::sqrt(transformation_matrices_right[i](0,0)*transformation_matrices_right[i](0,0)+transformation_matrices_right[i](0,1)*transformation_matrices_right[i](0,1)));
+        float x_gamma_right,z_alpha_right;
+        if(std::abs(y_beta_right-M_PI/2.0)<1e-6){
+            x_gamma_right=0; z_alpha_right=atan2(transformation_matrices_right[i](1,0),transformation_matrices_right[i](1,1));
+        }else if(std::abs(y_beta_right-(-M_PI/2.0))<1e-6){
+            x_gamma_right=0;z_alpha_right=atan2(transformation_matrices_right[i](1,0),transformation_matrices_right[i](1,1));
+        }else{
+            z_alpha_right = atan2(-transformation_matrices_right[i](0,1)/std::cos(y_beta_right),transformation_matrices_right[i](0,0)/std::cos(y_beta_right));
+            x_gamma_right = atan2(-transformation_matrices_right[i](1,2)/std::cos(y_beta_right),transformation_matrices_right[i](2,2)/std::cos(y_beta_right));
+        }
+        float x_right = transformation_matrices_right[i](0,3); float y_right=transformation_matrices_right[i](1,3); float z_right=transformation_matrices_right[i](2,3);
+        float length_right = std::sqrt(x_right*x_right+y_right*y_right+z_right*z_right);
+
+        if(length_left>=595||length_right>=595){
+            qInfo()<<"Out of Range with x = "<<x_left<<" y = "<<y_left<<" z = "<<z_left<<" index = "<<i<<" length = "<<length_left;
+            qInfo()<<"Out of Range with x = "<<x_right<<" y = "<<y_right<<" z = "<<z_right<<" index = "<<i<<" length = "<<length_right;
+            break;
+        }else{
+            demonstrate_data[i][0] = z_alpha_left;            demonstrate_data[i][1] = y_beta_left;            demonstrate_data[i][2] = x_gamma_left;
+            demonstrate_data[i][3] = x_left;                  demonstrate_data[i][4] = y_left;                 demonstrate_data[i][5] = z_left;
+            demonstrate_data[i][7] = z_alpha_right;           demonstrate_data[i][8] = y_beta_right;           demonstrate_data[i][9] = x_gamma_right;
+            demonstrate_data[i][10] = x_right;                demonstrate_data[i][11] = y_right;               demonstrate_data[i][12] = z_right;
+            std::cout << "left i: "<< 0 <<", rz: " << z_alpha_left << ", ry: " << y_beta_left << ", rx: " << x_gamma_left << ", tx: " << x_left << ", ty: " << y_left << ", tz: " << z_left << std::endl;
+            std::cout << "right i: "<< 0 <<", rz: " << z_alpha_right << ", ry: " << y_beta_right << ", rx: " << x_gamma_right << ", tx: " << x_right << ", ty: " << y_right << ", tz: " << z_right << std::endl;
+        }
+    }
+}
+
+void OpenLoongControler::on_pushButton_rcp_record_calibrate_clicked()
+{
+    std::cout<<"camera to shoulder "<<std::endl;
+    for (int i=0;i<4;++i) {
+        for (int j=0;j<4;++j) {
+            matrix_stc_left(i,j) = robot_system->robot_data->robot_info_.remote_computer_data_.camera_to_shoulder_left.matrix[i][j];
+            matrix_stc_right(i,j) = robot_system->robot_data->robot_info_.remote_computer_data_.camera_to_shoulder_right.matrix[i][j];
+        }
+    }
+    std::cout << "left stcnew matrix:" << std::endl;
+    std::cout << matrix_stc_left << std::endl;
+    std::cout << "right stcnew matrix:" << std::endl;
+    std::cout << matrix_stc_right << std::endl;
+
+    double dv3_l[7],dv3_r[7];
+    double weizi_l[7],weizi_r[7];
+    float k = 180.0*1000/M_PI;
+    dv3_l[0]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][0]/k;
+    dv3_l[1]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][1]/k;
+    dv3_l[2]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][2]/k;
+    dv3_l[3]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][3]/k;
+    dv3_l[4]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][4]/k;
+    dv3_l[5]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][5]/k;
+    dv3_l[6]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][6]/k;
+    dv3_r[0]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][0]/k;
+    dv3_r[1]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][1]/k;
+    dv3_r[2]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][2]/k;
+    dv3_r[3]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][3]/k;
+    dv3_r[4]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][4]/k;
+    dv3_r[5]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][5]/k;
+    dv3_r[6]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][6]/k;
+
+    k_OLR2(dv3_l, weizi_l);
+    k_OLR2(dv3_r, weizi_r);
+
+    std::cout<<weizi_l[0]<<" "<<weizi_l[1]<<" "<<weizi_l[2]<<" "<<weizi_l[3]<<" "<<weizi_l[4]<<" "<<weizi_l[5]<<" "<<weizi_l[6]<<std::endl;
+    std::cout<<weizi_r[0]<<" "<<weizi_r[1]<<" "<<weizi_r[2]<<" "<<weizi_r[3]<<" "<<weizi_r[4]<<" "<<weizi_r[5]<<" "<<weizi_r[6]<<std::endl;
+
+    float rz_left = weizi_l[0]; float ry_left = weizi_l[1]; float rx_left = weizi_l[2];
+    float tx_left = weizi_l[3]; float ty_left = weizi_l[4]; float tz_left = weizi_l[5];
+    float rz_right = weizi_r[0]; float ry_right = weizi_r[1]; float rx_right = weizi_r[2];
+    float tx_right = weizi_r[3]; float ty_right = weizi_r[4]; float tz_right = weizi_r[5];
+
+
+//    float rz_left =  1.6513; float ry_left =  1.2116; float rx_left =  3.0766;
+//    float tx_left =  -349; float ty_left =  169; float tz_left =  -19;
+//    float rz_right = -1.8774; float ry_right = 1.2392; float rx_right = -2.8543;
+//    float tx_right = -311; float ty_right = -250; float tz_right = 34;
+
+    //std::cout << tx << " " << ty << " " << tz << std::endl;
+    Eigen::Matrix4f matrix_hand_left = Eigen::Matrix4f::Identity();
+    Eigen::Matrix4f matrix_hand_right = Eigen::Matrix4f::Identity();
+    matrix_hand_left(0, 3) = tx_left;        matrix_hand_left(1, 3) = ty_left;        matrix_hand_left(2, 3) = tz_left;
+    matrix_hand_right(0, 3) = tx_right;      matrix_hand_right(1, 3) = ty_right;      matrix_hand_right(2, 3) = tz_right;
+    Eigen::Matrix3f rZ_left = Eigen::AngleAxisf(rz_left, Eigen::Vector3f::UnitZ()).toRotationMatrix();
+    Eigen::Matrix3f rY_left = Eigen::AngleAxisf(ry_left, Eigen::Vector3f::UnitY()).toRotationMatrix();
+    Eigen::Matrix3f rX_left = Eigen::AngleAxisf(rx_left, Eigen::Vector3f::UnitX()).toRotationMatrix();
+    Eigen::Matrix3f rZ_right = Eigen::AngleAxisf(rz_right, Eigen::Vector3f::UnitZ()).toRotationMatrix();
+    Eigen::Matrix3f rY_right = Eigen::AngleAxisf(ry_right, Eigen::Vector3f::UnitY()).toRotationMatrix();
+    Eigen::Matrix3f rX_right = Eigen::AngleAxisf(rx_right, Eigen::Vector3f::UnitX()).toRotationMatrix();
+
+    // 总的旋转矩阵，定系旋转顺序为 Rz * Ry * Rx
+    Eigen::Matrix3f rotation_matrix_left = rX_left * rY_left * rZ_left;
+    Eigen::Matrix3f rotation_matrix_right = rX_right * rY_right * rZ_right;
+    matrix_hand_left.block<3, 3>(0, 0) = rotation_matrix_left;  // 将 3x3 旋转矩阵插入到 4x4 矩阵中
+    matrix_hand_right.block<3, 3>(0, 0) = rotation_matrix_right;
+    std::cout << "left hand matrix:" << std::endl;
+    std::cout << matrix_hand_left << std::endl;
+    std::cout << "right hand matrix:" << std::endl;
+    std::cout << matrix_hand_right << std::endl;
+    Eigen::Matrix4f stc_left,stc_right,matrix_rtl,matrix_HR_HL;
+    matrix_rtl << 1,0,0,0,
+                0,-1,0,0,
+                0,0,-1,-405.2,
+                0.0, 0.0, 0.0, 1.0;
+
+    std::cout << "right hand matrix inverse:" << std::endl;
+    std::cout << matrix_hand_right.inverse() << std::endl;
+    matrix_HR_HL = matrix_hand_right.inverse()*matrix_rtl*matrix_hand_left;
+    std::cout << matrix_HR_HL << std::endl;
+    robot_system->matrix_HR_HL = matrix_HR_HL;
+}
+
+void OpenLoongControler::on_pushButton_rcp_record_stamp_clicked()
+{
+    if(!demonstrate_data.empty()){
+        stamp = 1.0*curr_demonstrate_index/demonstrate_data.size();
+        qInfo()<<stamp;
+    }else{
+        qInfo()<<"no trajectory loaded";
+    }
+
+    Eigen::Matrix4f transformation_matrices;
+    transformation_matrices <<0.680614,  -0.616649, -0.395613,  -297.877,
+                            -0.180424,  -0.664426,  0.725249,   376.252,
+                            -0.710079,  -0.422237, -0.563475,    109.16,
+                             0       ,   0       ,  0       ,  1;
+//    transformation_matrices << 0.6786 ,  -0.0877 ,   0.7293 ,-297.1650,
+//                               -0.7168,   -0.2959,    0.6314,  347.5200,
+//                                0.1604,   -0.9512,   -0.2637,   21.4891,
+//                                     0,         0,         0,    1.0000;
+//    Eigen::Matrix3f rotation_matrix = transformation_matrices.block<3, 3>(0, 0);
+//    Eigen::Vector3f translation = transformation_matrices.block<3, 1>(0, 3);
+//    Eigen::Vector3f euler_angles = rotation_matrix.eulerAngles(2, 1, 0); // 2, 1, 0 rotate  Z, Y, X axis
+//    float rz = euler_angles(0);        float ry = euler_angles(1);        float rx = euler_angles(2);
+//    float x = translation(0);          float y = translation(1);          float z = translation(2);
+
+    float y_beta = atan2(transformation_matrices(0,2),std::sqrt(transformation_matrices(0,0)*transformation_matrices(0,0)+transformation_matrices(0,1)*transformation_matrices(0,1)));
+    float x_gamma,z_alpha;
+    if(std::abs(y_beta-M_PI/2.0)<1e-6){
+        x_gamma=0; z_alpha=atan2(transformation_matrices(1,0),transformation_matrices(1,1));
+    }else if(std::abs(y_beta-(-M_PI/2.0))<1e-6){
+        x_gamma=0;z_alpha=atan2(transformation_matrices(1,0),transformation_matrices(1,1));
+    }else{
+        z_alpha = atan2(-transformation_matrices(0,1)/std::cos(y_beta),transformation_matrices(0,0)/std::cos(y_beta));
+        x_gamma = atan2(-transformation_matrices(1,2)/std::cos(y_beta),transformation_matrices(2,2)/std::cos(y_beta));
+    }
+
+    std::cout << "i: "<< 0 <<", rz: " << z_alpha << ", ry: " << y_beta << ", rx: " << x_gamma << ", tx: " << transformation_matrices(0,3) << ", ty: " << transformation_matrices(1,3) << ", tz: " << transformation_matrices(2,3) << std::endl;
+
 }
 
 void OpenLoongControler::on_pushButton_rcp_record_run_clicked()
@@ -1260,7 +1585,53 @@ void OpenLoongControler::on_pushButton_rcp_record_run_clicked()
         return;
     }
     qInfo()<<demonstrate_data.size()<<" "<<demonstrate_data[0].size();
+    curr_demonstrate_index=0;
+    accumulated_time=0.0;
+    rcp_run_timer->start(10);
+}
 
+void OpenLoongControler::handleRCP_run(){
+    if(curr_demonstrate_index< demonstrate_data.size()){
+        qInfo()<<curr_demonstrate_index<<" "<<demonstrate_data[curr_demonstrate_index][0]<<" "<<demonstrate_data[curr_demonstrate_index][1]<<" "<<demonstrate_data[curr_demonstrate_index][2]<<" "<<demonstrate_data[curr_demonstrate_index][3]<<" "<<demonstrate_data[curr_demonstrate_index][4]<<" "<<demonstrate_data[curr_demonstrate_index][5];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[0][0]=demonstrate_data[curr_demonstrate_index][0];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[0][1]=demonstrate_data[curr_demonstrate_index][1];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[0][2]=demonstrate_data[curr_demonstrate_index][2];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[0][3]=demonstrate_data[curr_demonstrate_index][3];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[0][4]=demonstrate_data[curr_demonstrate_index][4];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[0][5]=demonstrate_data[curr_demonstrate_index][5];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[0][6]=demonstrate_data[curr_demonstrate_index][6];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[1][0]=demonstrate_data[curr_demonstrate_index][7];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[1][1]=demonstrate_data[curr_demonstrate_index][8];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[1][2]=demonstrate_data[curr_demonstrate_index][9];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[1][3]=demonstrate_data[curr_demonstrate_index][10];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[1][4]=demonstrate_data[curr_demonstrate_index][11];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[1][5]=demonstrate_data[curr_demonstrate_index][12];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[1][6]=demonstrate_data[curr_demonstrate_index][13];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[0][0]=demonstrate_data[curr_demonstrate_index][14];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[0][1]=demonstrate_data[curr_demonstrate_index][15];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[0][2]=demonstrate_data[curr_demonstrate_index][16];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[0][3]=demonstrate_data[curr_demonstrate_index][17];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[0][4]=demonstrate_data[curr_demonstrate_index][18];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[0][5]=demonstrate_data[curr_demonstrate_index][19];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[1][0]=demonstrate_data[curr_demonstrate_index][20];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[1][1]=demonstrate_data[curr_demonstrate_index][21];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[1][2]=demonstrate_data[curr_demonstrate_index][22];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[1][3]=demonstrate_data[curr_demonstrate_index][23];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[1][4]=demonstrate_data[curr_demonstrate_index][24];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_exp_hand[1][5]=demonstrate_data[curr_demonstrate_index][25];
+        robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.q_vcap_hand[0] = demonstrate_data[curr_demonstrate_index][26];
+        //robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_vcap_hand[1] = demonstrate_data[curr_demonstrate_index][27];
+        curr_demonstrate_index += 1;
+    }else{
+        rcp_run_timer->stop();
+        qInfo()<<"Demonstrate end";
+        if(bool_demonstrator_loop){
+            qInfo()<<demonstrate_data.size()<<" "<<demonstrate_data[0].size()<<" loop";
+            curr_demonstrate_index=0;
+            accumulated_time=0.0;
+            rcp_run_timer->start(10);
+        }
+    }
 }
 
 void OpenLoongControler::on_pushButton_rcp_record_clear_clicked()
@@ -1272,27 +1643,28 @@ void OpenLoongControler::on_pushButton_rcp_init_clicked()
 {
     double dv3_l[7],dv3_r[7];
     double weizi_l[7],weizi_r[7];
-    dv3_l[0]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][0]/57300;
-    dv3_l[1]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][1]/57300;
-    dv3_l[2]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][2]/57300;
-    dv3_l[3]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][3]/57300;
-    dv3_l[4]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][4]/57300;
-    dv3_l[5]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][5]/57300;
-    dv3_l[6]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][6]/57300;
-    dv3_r[0]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][0]/57300;
-    dv3_r[1]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][1]/57300;
-    dv3_r[2]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][2]/57300;
-    dv3_r[3]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][3]/57300;
-    dv3_r[4]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][4]/57300;
-    dv3_r[5]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][5]/57300;
-    dv3_r[6]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][6]/57300;
+    float k = 180.0*1000/M_PI;
+    dv3_l[0]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][0]/k;
+    dv3_l[1]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][1]/k;
+    dv3_l[2]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][2]/k;
+    dv3_l[3]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][3]/k;
+    dv3_l[4]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][4]/k;
+    dv3_l[5]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][5]/k;
+    dv3_l[6]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][6]/k;
+    dv3_r[0]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][0]/k;
+    dv3_r[1]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][1]/k;
+    dv3_r[2]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][2]/k;
+    dv3_r[3]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][3]/k;
+    dv3_r[4]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][4]/k;
+    dv3_r[5]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][5]/k;
+    dv3_r[6]=robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][6]/k;
 
     k_OLR2(dv3_l, weizi_l);
     k_OLR2(dv3_r, weizi_r);
 
-    std::cout<<dv3_l[0]<<" "<<dv3_l[1]<<" "<<dv3_l[2]<<" "<<dv3_l[3]<<" "<<dv3_l[4]<<" "<<dv3_l[5]<<" "<<dv3_l[6]<<std::endl;
+    //std::cout<<dv3_l[0]<<" "<<dv3_l[1]<<" "<<dv3_l[2]<<" "<<dv3_l[3]<<" "<<dv3_l[4]<<" "<<dv3_l[5]<<" "<<dv3_l[6]<<std::endl;
     std::cout<<weizi_l[0]<<" "<<weizi_l[1]<<" "<<weizi_l[2]<<" "<<weizi_l[3]<<" "<<weizi_l[4]<<" "<<weizi_l[5]<<" "<<weizi_l[6]<<std::endl;
-    std::cout<<dv3_r[0]<<" "<<dv3_r[1]<<" "<<dv3_r[2]<<" "<<dv3_r[3]<<" "<<dv3_r[4]<<" "<<dv3_r[5]<<" "<<dv3_r[6]<<std::endl;
+    //std::cout<<dv3_r[0]<<" "<<dv3_r[1]<<" "<<dv3_r[2]<<" "<<dv3_r[3]<<" "<<dv3_r[4]<<" "<<dv3_r[5]<<" "<<dv3_r[6]<<std::endl;
     std::cout<<weizi_r[0]<<" "<<weizi_r[1]<<" "<<weizi_r[2]<<" "<<weizi_r[3]<<" "<<weizi_r[4]<<" "<<weizi_r[5]<<" "<<weizi_r[6]<<std::endl;
 
     robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[0][0]=static_cast<float>(weizi_l[0]);
@@ -1349,6 +1721,16 @@ void OpenLoongControler::on_lineEdit_rcp_k_editingFinished()
 {
     rcp_k=ui->lineEdit_rcp_k->text().toFloat();
     ui->horizontalSlider_rcp_k->setValue(rcp_k);
+}
+
+void OpenLoongControler::on_pushButton_rcp_lock_clicked()
+{
+    robot_system->rcp_lock = true;
+}
+
+void OpenLoongControler::on_pushButton_rcp_unlock_clicked()
+{
+    robot_system->rcp_lock = false;
 }
 
 //hand
@@ -1572,12 +1954,12 @@ void OpenLoongControler::drawHand_update(){
     point_list.push_back(Point{430, 110, robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_little_finger_r[2]});
     point_list.push_back(Point{430, 100, robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_little_finger_r[3]});
 
-    qInfo()<<"Left thumb"<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_thumb_l[0]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_thumb_l[1]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_thumb_l[2]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_thumb_l[3]<<" ";
-    qInfo()<<"Left Index: "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_index_finger_l[0]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_index_finger_l[1]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_index_finger_l[2]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_index_finger_l[3];
-    qInfo()<<"Left middel: "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_middle_finger_l[0]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_middle_finger_l[1]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_middle_finger_l[2]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_middle_finger_l[3];
-    qInfo()<<"Left ring"<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_ring_finger_l[0]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_ring_finger_l[1]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_ring_finger_l[2]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_ring_finger_l[3];
-    qInfo()<<"Left little"<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_little_finger_l[0]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_little_finger_l[1]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_little_finger_l[2]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_little_finger_l[3];
-    qInfo()<<"";
+//    qInfo()<<"Left thumb"<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_thumb_l[0]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_thumb_l[1]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_thumb_l[2]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_thumb_l[3]<<" ";
+//    qInfo()<<"Left Index: "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_index_finger_l[0]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_index_finger_l[1]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_index_finger_l[2]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_index_finger_l[3];
+//    qInfo()<<"Left middel: "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_middle_finger_l[0]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_middle_finger_l[1]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_middle_finger_l[2]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_middle_finger_l[3];
+//    qInfo()<<"Left ring"<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_ring_finger_l[0]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_ring_finger_l[1]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_ring_finger_l[2]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_ring_finger_l[3];
+//    qInfo()<<"Left little"<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_little_finger_l[0]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_little_finger_l[1]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_little_finger_l[2]<<" "<<robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.sensor_little_finger_l[3];
+//    qInfo()<<"";
     max_count=0;
     for(int i=0;i<point_list.length();i++){
         countTable[point_list[i].posX+point_list[i].posY*ImgWidth]=point_list[i].count;
@@ -1625,3 +2007,5 @@ bool OpenLoongControler::eventFilter(QObject *watched, QEvent *event)
     }
     return QWidget::eventFilter(watched, event);
 }
+
+

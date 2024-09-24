@@ -29,7 +29,10 @@
 #include <QPaintEvent>
 #include <QLinearGradient>
 #include <QRadialGradient>
-
+#include <QDebug>
+#include <QMatrix4x4>
+#include <QVector3D>
+#include <eigen3/Eigen/Dense>
 extern std::atomic<float> joint_larm_0;
 extern std::atomic<float> joint_larm_1;
 extern std::atomic<float> joint_larm_2;
@@ -145,11 +148,14 @@ public:
     explicit OpenLoongControler(QWidget *parent = 0);
     ~OpenLoongControler();
     QTimer * clients_com_timer;
+    QTimer * clients_remote_timer;
+    QTimer * clients_agv;
     QTimer* keyRespondTimer;
     QTimer * show_timer;
     QTimer * demonstrator_timer;
     QTimer * demonstrator_run_timer;
     QTimer * rcp_timer;
+    QTimer * rcp_run_timer;
     QTimer * draw_timer;
     RobotSystem * robot_system;
 
@@ -170,6 +176,7 @@ private slots:
     void handleRCP();
     void drawHand_update();
     void handleDemonstrator_run();
+    void handleRCP_run();
     void on_pushButton_manual_step_set_clicked();
 
     void on_pushButton_demon_continue_start_clicked();
@@ -242,6 +249,14 @@ private slots:
 
     void on_pushButton_rcp_record_modify_clicked();
 
+    void on_pushButton_rcp_record_stamp_clicked();
+
+    void on_pushButton_rcp_record_calibrate_clicked();
+
+    void on_pushButton_rcp_lock_clicked();
+
+    void on_pushButton_rcp_unlock_clicked();
+
 private:
     Ui::OpenLoongControler *ui;
 
@@ -254,10 +269,15 @@ private:
     bool bool_demonstrator_loop = false;
     bool rgb = false;
     short mouse_control_arm=0;
+    //rcp
     double rcp_k=1;// 步长倍率
     float manual_step=0.02f;
+    float stamp = 0.25; //rcp trajectory time stamp
     float rcp_step_rxyz=0.02f,rcp_step_x=0.02f,rcp_step_y=0.02f,rcp_step_z=0.02f;
     float delta_r_x = 0.0f, delta_r_y = 0.0f, delta_r_z = 10.0f;
+    float delta_r_rx = 0.0f, delta_r_ry = 0.0f, delta_r_rz = 10.0f;
+    Eigen::Matrix4f  matrix_stc_left, matrix_stc_right;
+    //manual
     QList<int> pressedKeys;
     QMap<int, bool> keyPressedMap;
     std::unordered_map<int,struct LabelInfo> map_pos;
@@ -269,6 +289,7 @@ private:
     std::unordered_map<int,struct LabelInfo> map_rcp;
     //demonstrate
     std::vector<std::vector<float>> demonstrate_data;
+    std::vector<std::vector<float>> demonstrate_data_rcp;
     unsigned long curr_demonstrate_index=0;
     double playback_speed=1.0; // 倍速值
     double accumulated_time; // 累积时间
@@ -285,6 +306,8 @@ private:
     void initLabel();
     void drawHand();
     std::vector<float> interpolate(const std::vector<float>& start, const std::vector<float>& end, double t);
+    void on_pushButton_rcp_record_modify_clicked_old();
+
 
 signals:
     void startRecording(const int mode);
