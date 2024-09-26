@@ -556,6 +556,16 @@ void OpenLoongControler::ShowInfomation(){
          robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head[0]));
     ui->label_feedback_head2_pos->setText(QString::number(
          robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head[1]));
+    ui->label_feedback_r_A_19->setText(QString::number(
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_waist_exp[0]));
+    ui->label_feedback_r_A_20->setText(QString::number(
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_waist_exp[1]));
+    ui->label_feedback_r_A_21->setText(QString::number(
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_waist_exp[2]));
+    ui->label_feedback_r_A_22->setText(QString::number(
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head_exp[0]));
+    ui->label_feedback_r_A_22->setText(QString::number(
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head_exp[1]));
 
 
     ui->label_feedback_velo_l_A_1->setText(QString::number(
