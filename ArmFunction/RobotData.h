@@ -15,7 +15,7 @@ class RobotData
 public:
     struct Robot_Feedback_Basic_Info
     {
-        float arm_cartesion[2][DOF_HEAD];
+        float arm_cartesion[2][DOF_ARM];
         float joint_q_head[DOF_HEAD];//rad
         float joint_qd_head[DOF_HEAD];//rad/s
         float joint_tau_head[DOF_HEAD];//Nm

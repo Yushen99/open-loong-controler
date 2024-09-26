@@ -716,6 +716,37 @@ void OpenLoongControler::ShowInfomation(){
          robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.tau_exp_head[0]));
     ui->label_feedback_head2_curr_2->setText(QString::number(
          robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.tau_exp_head[1]));
+
+    //fk
+    ui->label_feedback_l_fk_1->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[0][0])));
+    ui->label_feedback_l_fk_2->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[0][1])));
+    ui->label_feedback_l_fk_3->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[0][2])));
+    ui->label_feedback_l_fk_4->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[0][3])));
+    ui->label_feedback_l_fk_5->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[0][4])));
+    ui->label_feedback_l_fk_6->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[0][5])));
+    ui->label_feedback_l_fk_7->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[0][6])));
+    ui->label_feedback_r_fk_1->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[1][0])));
+    ui->label_feedback_r_fk_2->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[1][1])));
+    ui->label_feedback_r_fk_3->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[1][2])));
+    ui->label_feedback_r_fk_4->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[1][3])));
+    ui->label_feedback_r_fk_5->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[1][4])));
+    ui->label_feedback_r_fk_6->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[1][5])));
+    ui->label_feedback_r_fk_7->setText(QString::number((
+         robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[1][6])));
+
     //rcp
     ui->label_rcp_motion_l_1->setText(QString::number(
          robot_system->robot_data->robot_info_.motion_data_recieve_.left_arm_rz));
