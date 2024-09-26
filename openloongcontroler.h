@@ -242,6 +242,8 @@ private slots:
 
     void on_pushButton_rcp_record_modify_clicked();
 
+    void on_pushButton_reset_error_clicked();
+
 private:
     Ui::OpenLoongControler *ui;
 

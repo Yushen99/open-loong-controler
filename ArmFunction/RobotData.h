@@ -15,6 +15,7 @@ class RobotData
 public:
     struct Robot_Feedback_Basic_Info
     {
+        float arm_cartesion[2][DOF_HEAD];
         float joint_q_head[DOF_HEAD];//rad
         float joint_qd_head[DOF_HEAD];//rad/s
         float joint_tau_head[DOF_HEAD];//Nm
@@ -81,6 +82,8 @@ public:
         uint16_t sensor_ring_finger_r [4];
         uint16_t sensor_little_finger_r [4];
         //uint16_t sensor_palm_r [63];
+
+
     };
 
     struct Robot_Feedback_Info
@@ -118,6 +121,7 @@ public:
         int motion_mode;
         int running_mode;
         int error;
+        int reset_feedback;
 
     };
 
@@ -163,6 +167,7 @@ public:
         int enable;
         int filter_enable;
         int joint_mode;  /////  0:POSITION, 1:VELOCITY, 2:CURRENT;
+        int reset_error = 0;
 
     };
     struct JointCmd

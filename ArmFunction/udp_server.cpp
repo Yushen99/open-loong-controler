@@ -67,6 +67,9 @@ int UdpServer::rcv_calback(void *package, uint16_t port){
                 break;
             case PORT_ROBOT_STATE:
                 memcpy(&robot_data_->robot_info_.robot_state_,buf,sizeof(RobotData::RobotState));
+                if(robot_data_->robot_info_.robot_state_.reset_feedback == 1 && robot_data_->robot_info_.robot_cmd_send_.reset_error == 1){
+                    robot_data_->robot_info_.robot_cmd_send_.reset_error = 0;
+                }
                 break;
             case PORT_ROBOT_SERVO_INFO:
                 memcpy(&robot_data_->robot_info_.robot_feedback_info_,buf,sizeof(RobotData::Robot_Feedback_Info));

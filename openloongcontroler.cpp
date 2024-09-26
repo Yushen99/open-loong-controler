@@ -564,7 +564,7 @@ void OpenLoongControler::ShowInfomation(){
          robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_waist_exp[2]));
     ui->label_feedback_r_A_22->setText(QString::number(
          robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head_exp[0]));
-    ui->label_feedback_r_A_22->setText(QString::number(
+    ui->label_feedback_r_A_23->setText(QString::number(
          robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head_exp[1]));
 
 
@@ -1634,4 +1634,14 @@ bool OpenLoongControler::eventFilter(QObject *watched, QEvent *event)
         return true;
     }
     return QWidget::eventFilter(watched, event);
+}
+
+void OpenLoongControler::on_pushButton_reset_error_clicked()
+{
+    robot_system->robot_data->robot_info_.robot_cmd_send_.reset_error = 1;
+    QPushButton *button = qobject_cast<QPushButton*>(sender());
+    if (button) {
+        button->setStyleSheet("background-color: yellow;"); //
+    }
+    qInfo()<<"reset error sent!";
 }
