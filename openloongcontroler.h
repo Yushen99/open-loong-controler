@@ -84,10 +84,6 @@ extern std::atomic<float> joint_rhand_5;
 extern std::atomic<float> vcap_hand_0;
 extern std::atomic<float> vcap_hand_1;
 
-extern std::atomic<uint8_t> R_value;
-extern std::atomic<uint8_t> G_value;
-extern std::atomic<uint8_t> B_value;
-
 namespace Ui {
 class OpenLoongControler;
 }
@@ -110,6 +106,11 @@ class OpenLoongControler : public QMainWindow
     enum Pos_Curr{
         POSITION = 0,
         CURRENT = 1
+    };
+
+    enum Manual_Mode{
+        JOINT = 0,
+        CARTESION = 1
     };
 
     enum Add_Minus{
@@ -163,8 +164,6 @@ private slots:
     void ShowInfomation();
     void ShowModeInfo();
     void on_pushButton_oneshot_manual_clicked();
-    void on_radioButton_manual_pos_clicked();
-    void on_radioButton_manual_curr_clicked();
     void handleKeyPress();
     void handleDemonstrator();
     void handleRCP();
@@ -244,6 +243,12 @@ private slots:
 
     void on_pushButton_reset_error_clicked();
 
+    void on_radioButton_manual_joint_clicked();
+
+    void on_radioButton_manual_cartesion_clicked();
+
+    void on_pushButton_cartesion_step_set_clicked();
+
 private:
     Ui::OpenLoongControler *ui;
 
@@ -252,12 +257,13 @@ private:
     QMutex mutex;
     QMutex dataMutex;
     Pos_Curr posCurr = POSITION;
+    Manual_Mode mMode = JOINT;
     bool bool_manualEnabled=false;
     bool bool_demonstrator_loop = false;
     bool rgb = false;
     short mouse_control_arm=0;
     double rcp_k=1;// 步长倍率
-    float manual_step=0.02f;
+    float manual_step=0.02f, cartesion_step=1.0f;
     float rcp_step_rxyz=0.02f,rcp_step_x=0.02f,rcp_step_y=0.02f,rcp_step_z=0.02f;
     float delta_r_x = 0.0f, delta_r_y = 0.0f, delta_r_z = 10.0f;
     QList<int> pressedKeys;

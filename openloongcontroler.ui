@@ -110,7 +110,7 @@
         </rect>
        </property>
        <property name="text">
-        <string>192.168.1.204</string>
+        <string>192.168.113.131</string>
        </property>
       </widget>
       <widget class="QPushButton" name="pushButton_enable">
@@ -474,89 +474,24 @@
       <property name="title">
        <string>Arm</string>
       </property>
-      <widget class="QLabel" name="label_23">
-       <property name="geometry">
-        <rect>
-         <x>80</x>
-         <y>150</y>
-         <width>59</width>
-         <height>15</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Step</string>
-       </property>
-      </widget>
-      <widget class="QLineEdit" name="lineEdit_manual_step">
-       <property name="geometry">
-        <rect>
-         <x>40</x>
-         <y>170</y>
-         <width>113</width>
-         <height>23</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>0.5</string>
-       </property>
-      </widget>
       <widget class="QLabel" name="label_manual_mode">
        <property name="geometry">
         <rect>
-         <x>30</x>
-         <y>220</y>
-         <width>59</width>
-         <height>15</height>
+         <x>110</x>
+         <y>70</y>
+         <width>111</width>
+         <height>16</height>
         </rect>
        </property>
        <property name="text">
-        <string>NAN</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_manual_step">
-       <property name="geometry">
-        <rect>
-         <x>170</x>
-         <y>220</y>
-         <width>59</width>
-         <height>15</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>NAN</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_manual_step_mode">
-       <property name="geometry">
-        <rect>
-         <x>100</x>
-         <y>220</y>
-         <width>59</width>
-         <height>15</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>NAN</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="pushButton_keyboard">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>40</y>
-         <width>181</width>
-         <height>51</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Keyboard</string>
+        <string>JOINT</string>
        </property>
       </widget>
       <widget class="QLabel" name="label_manual_keyboard">
        <property name="geometry">
         <rect>
-         <x>90</x>
-         <y>100</y>
+         <x>110</x>
+         <y>30</y>
          <width>59</width>
          <height>15</height>
         </rect>
@@ -565,107 +500,198 @@
         <string>Off</string>
        </property>
       </widget>
-      <widget class="QLabel" name="label_key_1">
+      <widget class="QLabel" name="label_2">
        <property name="geometry">
         <rect>
-         <x>280</x>
-         <y>370</y>
-         <width>59</width>
-         <height>15</height>
+         <x>20</x>
+         <y>30</y>
+         <width>67</width>
+         <height>17</height>
         </rect>
        </property>
        <property name="text">
-        <string>TextLabel</string>
+        <string>Keyboard</string>
        </property>
       </widget>
-      <widget class="QLabel" name="label_key2">
+      <widget class="QLabel" name="label_3">
        <property name="geometry">
         <rect>
-         <x>380</x>
-         <y>370</y>
-         <width>59</width>
-         <height>15</height>
+         <x>20</x>
+         <y>70</y>
+         <width>67</width>
+         <height>17</height>
         </rect>
        </property>
        <property name="text">
-        <string>TextLabel</string>
-       </property>
-      </widget>
-      <widget class="QLabel" name="label_key3">
-       <property name="geometry">
-        <rect>
-         <x>470</x>
-         <y>370</y>
-         <width>59</width>
-         <height>15</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>TextLabel</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="pushButton_manual_step_set">
-       <property name="geometry">
-        <rect>
-         <x>160</x>
-         <y>160</y>
-         <width>61</width>
-         <height>41</height>
-        </rect>
-       </property>
-       <property name="text">
-        <string>Set</string>
+        <string>Mode</string>
        </property>
       </widget>
       <widget class="QGroupBox" name="groupBox_7">
        <property name="geometry">
         <rect>
          <x>20</x>
-         <y>260</y>
-         <width>201</width>
+         <y>110</y>
+         <width>191</width>
          <height>111</height>
         </rect>
        </property>
        <property name="title">
-        <string>GroupBox</string>
+        <string>Mode</string>
        </property>
-       <widget class="QRadioButton" name="radioButton_manual_pos">
+       <widget class="QRadioButton" name="radioButton_manual_joint">
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>20</y>
+          <y>30</y>
           <width>112</width>
           <height>23</height>
          </rect>
         </property>
         <property name="text">
-         <string>Position</string>
+         <string>Joint</string>
         </property>
        </widget>
-       <widget class="QRadioButton" name="radioButton_manual_curr">
+       <widget class="QRadioButton" name="radioButton_manual_cartesion">
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>60</y>
+          <y>70</y>
           <width>112</width>
           <height>23</height>
          </rect>
         </property>
         <property name="text">
-         <string>Current</string>
+         <string>Cartesion</string>
         </property>
        </widget>
-       <widget class="QRadioButton" name="radioButton_manual_velocity">
+      </widget>
+      <widget class="QGroupBox" name="groupBox_14">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>230</y>
+         <width>241</width>
+         <height>121</height>
+        </rect>
+       </property>
+       <property name="title">
+        <string>Joint Step</string>
+       </property>
+       <widget class="QLabel" name="label_23">
         <property name="geometry">
          <rect>
-          <x>10</x>
+          <x>20</x>
           <y>40</y>
-          <width>112</width>
+          <width>59</width>
+          <height>15</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Step</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="lineEdit_manual_step">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>70</y>
+          <width>113</width>
           <height>23</height>
          </rect>
         </property>
         <property name="text">
-         <string>Velocity</string>
+         <string>0.5</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_manual_step">
+        <property name="geometry">
+         <rect>
+          <x>90</x>
+          <y>40</y>
+          <width>59</width>
+          <height>15</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>0.5</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton_manual_step_set">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>40</y>
+          <width>71</width>
+          <height>51</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Set</string>
+        </property>
+       </widget>
+      </widget>
+      <widget class="QGroupBox" name="groupBox_16">
+       <property name="geometry">
+        <rect>
+         <x>20</x>
+         <y>360</y>
+         <width>241</width>
+         <height>121</height>
+        </rect>
+       </property>
+       <property name="title">
+        <string>Cartesion Step</string>
+       </property>
+       <widget class="QLabel" name="label_35">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>40</y>
+          <width>59</width>
+          <height>15</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Step</string>
+        </property>
+       </widget>
+       <widget class="QLineEdit" name="lineEdit_cartesion_step">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>70</y>
+          <width>113</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>0.5</string>
+        </property>
+       </widget>
+       <widget class="QLabel" name="label_cartesion_step">
+        <property name="geometry">
+         <rect>
+          <x>90</x>
+          <y>40</y>
+          <width>59</width>
+          <height>15</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>0.5</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="pushButton_cartesion_step_set">
+        <property name="geometry">
+         <rect>
+          <x>150</x>
+          <y>40</y>
+          <width>71</width>
+          <height>51</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>Set</string>
         </property>
        </widget>
       </widget>

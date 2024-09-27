@@ -14,9 +14,9 @@ class RobotData
 {
 public:
     struct Robot_Feedback_Basic_Info
-    {
-        float arm_cartesion[2][DOF_ARM];
+    {      
         float joint_q_head[DOF_HEAD];//rad
+        float arm_cartesion[2][DOF_ARM];
         float joint_qd_head[DOF_HEAD];//rad/s
         float joint_tau_head[DOF_HEAD];//Nm
         float joint_power_head[DOF_HEAD];//W
@@ -96,6 +96,7 @@ public:
     struct Servo_Cmd_Basic_Info
     {
         float ee_motion[2][DOF_ARM];
+        float arm_cartesion[2][DOF_ARM];
         float dq_exp[2][DOF_ARM];
         float tau_exp[2][DOF_ARM];
         int q_enable[2][DOF_ARM];

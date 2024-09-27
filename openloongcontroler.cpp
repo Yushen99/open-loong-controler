@@ -142,6 +142,16 @@ void OpenLoongControler::on_pushButton_reset_clicked()
     robot_system->running_mode = RobotSystem::READY;
 }
 
+void OpenLoongControler::on_pushButton_reset_error_clicked()
+{
+    robot_system->robot_data->robot_info_.robot_cmd_send_.reset_error = 1;
+    QPushButton *button = qobject_cast<QPushButton*>(sender());
+    if (button) {
+        button->setStyleSheet("background-color: yellow;"); //
+    }
+    qInfo()<<"reset error sent!";
+}
+
 //connect
 void OpenLoongControler::on_pushButton_init_connect_clicked()
 {
@@ -378,7 +388,7 @@ void OpenLoongControler::keyReleaseEvent(QKeyEvent *event)
         keyRespondTimer->stop();}
 
 void OpenLoongControler::handleKeyPress(){
-    if(robot_system->motion_mode==RobotSystem::MANUAL){
+    if(robot_system->motion_mode==RobotSystem::MANUAL&&mMode==JOINT){
         for (int key : pressedKeys) {
             float currentValue = 0.0f;
             if(posCurr==POSITION){
@@ -462,26 +472,47 @@ void OpenLoongControler::handleKeyPress(){
                 }
             }
         }
-    }else if(robot_system->motion_mode==RobotSystem::MOTION_CAPTURE){
+    }else if(robot_system->motion_mode==RobotSystem::MANUAL&&mMode==CARTESION){
         for (int key : pressedKeys) {
             float currentValue = 0.0f;
                 if (map_rcp.find(key) != map_rcp.end()) {
-                    currentValue = robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[map_rcp[key].row][map_rcp[key].col];
+                    currentValue = robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[map_rcp[key].row][map_rcp[key].col];
                     cout << "Key: " << key << endl;
                     cout << "Value: " << currentValue << endl;
-                    if(map_rcp[key].col<3||map_rcp[key].col>5){
-                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + rcp_step_rxyz*rcp_k : currentValue - rcp_step_rxyz*rcp_k;
-                    }else if(map_rcp[key].col==3){
-                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + rcp_step_x*50*rcp_k : currentValue - rcp_step_x*50*rcp_k;
-                    }else if(map_rcp[key].col==4){
-                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + rcp_step_y*50*rcp_k : currentValue - rcp_step_y*50*rcp_k;
-                    }else if(map_rcp[key].col==5){
-                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + rcp_step_z*50*rcp_k : currentValue - rcp_step_z*50*rcp_k;
+                    if(map_rcp[key].col>2){
+                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step*rcp_k/50.0 : currentValue - cartesion_step*rcp_k/50.0;
+                    }else if(map_rcp[key].col==0){
+                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step*rcp_k : currentValue - cartesion_step*rcp_k;
+                    }else if(map_rcp[key].col==1){
+                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step*rcp_k : currentValue - cartesion_step*rcp_k;
+                    }else if(map_rcp[key].col==2){
+                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step*rcp_k : currentValue - cartesion_step*rcp_k;
                     }
-                    //map_pos[key].label->setText(QString::number(currentValue));
-                    robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[map_rcp[key].row][map_rcp[key].col] = currentValue;
+                    qInfo()<<currentValue;
+                    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[map_rcp[key].row][map_rcp[key].col] = currentValue;
                 }
         }
+    }else{
+        qInfo()<<"Manual key press in else mode! Warning!";
+//        for (int key : pressedKeys) {
+//            float currentValue = 0.0f;
+//                if (map_rcp.find(key) != map_rcp.end()) {
+//                    currentValue = robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[map_rcp[key].row][map_rcp[key].col];
+//                    cout << "Key: " << key << endl;
+//                    cout << "Value: " << currentValue << endl;
+//                    if(map_rcp[key].col<3||map_rcp[key].col>5){
+//                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + rcp_step_rxyz*rcp_k : currentValue - rcp_step_rxyz*rcp_k;
+//                    }else if(map_rcp[key].col==3){
+//                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + rcp_step_x*50*rcp_k : currentValue - rcp_step_x*50*rcp_k;
+//                    }else if(map_rcp[key].col==4){
+//                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + rcp_step_y*50*rcp_k : currentValue - rcp_step_y*50*rcp_k;
+//                    }else if(map_rcp[key].col==5){
+//                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + rcp_step_z*50*rcp_k : currentValue - rcp_step_z*50*rcp_k;
+//                    }
+//                    //map_pos[key].label->setText(QString::number(currentValue));
+//                    robot_system->robot_data->robot_info_.motion_data_.basic_cmd_info.ee_motion[map_rcp[key].row][map_rcp[key].col] = currentValue;
+//                }
+//        }
     }
 
 }
@@ -902,21 +933,10 @@ void OpenLoongControler::ShowModeInfo(){
     }
 }
 
-void OpenLoongControler::on_radioButton_manual_pos_clicked()
-{
-    posCurr = POSITION;
-    robot_system->robot_data->robot_info_.robot_cmd_send_.joint_mode = 0;
-}
-
-void OpenLoongControler::on_radioButton_manual_curr_clicked()
-{
-    posCurr = CURRENT;
-    robot_system->robot_data->robot_info_.robot_cmd_send_.joint_mode = 2;
-}
-
 void OpenLoongControler::on_pushButton_manual_step_set_clicked()
 {
     manual_step = ui->lineEdit_manual_step->text().toFloat();
+    ui->label_manual_step->setText(QString::number(manual_step));
 }
 
 //demonstrator
@@ -1133,12 +1153,6 @@ void OpenLoongControler::handleDemonstrator_run(){
         robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_exp_hand[1][4]=interpolated_data[24];
         robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_exp_hand[1][5]=interpolated_data[25];
         robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_vcap_hand[0] = interpolated_data[26];
-        if(rgb){
-            //qInfo()<<interpolated_data[27]<<" "<<interpolated_data[28]<<" "<<interpolated_data[29];
-            R_value=interpolated_data[27];
-            G_value=interpolated_data[28];
-            B_value=interpolated_data[29];
-        }
         //robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_vcap_hand[1] = demonstrate_data[curr_demonstrate_index][27];
     }else{
         demonstrator_run_timer->stop();
@@ -1667,12 +1681,22 @@ bool OpenLoongControler::eventFilter(QObject *watched, QEvent *event)
     return QWidget::eventFilter(watched, event);
 }
 
-void OpenLoongControler::on_pushButton_reset_error_clicked()
+
+
+void OpenLoongControler::on_radioButton_manual_joint_clicked()
 {
-    robot_system->robot_data->robot_info_.robot_cmd_send_.reset_error = 1;
-    QPushButton *button = qobject_cast<QPushButton*>(sender());
-    if (button) {
-        button->setStyleSheet("background-color: yellow;"); //
-    }
-    qInfo()<<"reset error sent!";
+    mMode = JOINT;
+    ui->label_manual_mode->setText("JOINT");
+}
+
+void OpenLoongControler::on_radioButton_manual_cartesion_clicked()
+{
+    mMode = CARTESION;
+    ui->label_manual_mode->setText("CARTESION");
+}
+
+void OpenLoongControler::on_pushButton_cartesion_step_set_clicked()
+{
+    cartesion_step = ui->lineEdit_cartesion_step->text().toFloat();
+    ui->label_cartesion_step->setText(QString::number(cartesion_step));
 }
