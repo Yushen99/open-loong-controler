@@ -23,7 +23,7 @@ public:
       DYNAMIC,
       MANUAL,
       AUTO,
-      DEMONSTRATOR,
+      MOVEL,
       MOTION_CAPTURE
     };
     enum RunningMode{

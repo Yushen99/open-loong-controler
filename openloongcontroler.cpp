@@ -86,7 +86,21 @@ OpenLoongControler::~OpenLoongControler()
 void OpenLoongControler::on_pushButton_oneshot_demonstrator_clicked()
 {
     //robot_system->robot_data->robot_info_.robot_state_.motion_mode = 4;
-    robot_system->motion_mode = RobotSystem::DEMONSTRATOR;
+    robot_system->motion_mode = RobotSystem::MOVEL;
+    mMode = CARTESION;
+    ui->label_manual_mode->setText("CARTESION");
+    bool_manualEnabled = true;
+    ui->label_manual_keyboard->setText("On");
+
+    memcpy(&robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion,
+           &robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm,
+           sizeof(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm));
+    memcpy(&robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_exp_waist,
+           &robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_waist,
+           sizeof(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_waist));
+    memcpy(&robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_exp_head,
+           &robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head,
+           sizeof(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head));
 }
 
 void OpenLoongControler::on_pushButton_oneshot_idle_clicked()
@@ -99,15 +113,11 @@ void OpenLoongControler::on_pushButton_oneshot_idle_clicked()
 
 void OpenLoongControler::on_pushButton_oneshot_manual_clicked()
 {
-    //enable or disable manual function
     robot_system->motion_mode = RobotSystem::MANUAL;
+    mMode = JOINT;
+    ui->label_manual_mode->setText("JOINT");
     bool_manualEnabled = true;
-    if(bool_manualEnabled){
-//        robot_system->robot_data->robot_info_.robot_state_.motion_mode = 2;
-        ui->label_manual_keyboard->setText("On");
-    }else{
-        ui->label_manual_keyboard->setText("Off");
-    }
+    ui->label_manual_keyboard->setText("On");
 
     memcpy(&robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion,
            &robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm,
@@ -472,7 +482,7 @@ void OpenLoongControler::handleKeyPress(){
                 }
             }
         }
-    }else if(robot_system->motion_mode==RobotSystem::MANUAL&&mMode==CARTESION){
+    }else if(robot_system->motion_mode==RobotSystem::MOVEL&&mMode==CARTESION){
         for (int key : pressedKeys) {
             float currentValue = 0.0f;
                 if (map_rcp.find(key) != map_rcp.end()) {
@@ -903,7 +913,7 @@ void OpenLoongControler::ShowModeInfo(){
             ui->label_motion_mode->setText("MANUAL"); break;
         case RobotSystem::AUTO:
             ui->label_motion_mode->setText("AUTO"); break;
-        case RobotSystem::DEMONSTRATOR:
+        case RobotSystem::MOVEL:
             ui->label_motion_mode->setText("DEMONSTRATOR"); break;
         case RobotSystem::MOTION_CAPTURE:
             ui->label_motion_mode->setText("MOTION_CAPTURE"); break;
@@ -937,6 +947,12 @@ void OpenLoongControler::on_pushButton_manual_step_set_clicked()
 {
     manual_step = ui->lineEdit_manual_step->text().toFloat();
     ui->label_manual_step->setText(QString::number(manual_step));
+}
+
+void OpenLoongControler::on_pushButton_cartesion_step_set_clicked()
+{
+    cartesion_step = ui->lineEdit_cartesion_step->text().toFloat();
+    ui->label_cartesion_step->setText(QString::number(cartesion_step));
 }
 
 //demonstrator
@@ -1682,21 +1698,3 @@ bool OpenLoongControler::eventFilter(QObject *watched, QEvent *event)
 }
 
 
-
-void OpenLoongControler::on_radioButton_manual_joint_clicked()
-{
-    mMode = JOINT;
-    ui->label_manual_mode->setText("JOINT");
-}
-
-void OpenLoongControler::on_radioButton_manual_cartesion_clicked()
-{
-    mMode = CARTESION;
-    ui->label_manual_mode->setText("CARTESION");
-}
-
-void OpenLoongControler::on_pushButton_cartesion_step_set_clicked()
-{
-    cartesion_step = ui->lineEdit_cartesion_step->text().toFloat();
-    ui->label_cartesion_step->setText(QString::number(cartesion_step));
-}

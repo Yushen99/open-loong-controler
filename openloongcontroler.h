@@ -243,10 +243,6 @@ private slots:
 
     void on_pushButton_reset_error_clicked();
 
-    void on_radioButton_manual_joint_clicked();
-
-    void on_radioButton_manual_cartesion_clicked();
-
     void on_pushButton_cartesion_step_set_clicked();
 
 private:

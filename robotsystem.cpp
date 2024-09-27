@@ -91,8 +91,10 @@ void RobotSystem::UdpClientsRun(){
 //                (void *)&robot_data->robot_info_.motion_data_, sizeof(RobotData::MotionData), 0,
 //                (struct sockaddr *)&udp_client_robot_ee->addr_serv, udp_client_robot_ee->len);
 //            break;
-        case DEMONSTRATOR:
-
+        case MOVEL:
+            sendto(udp_client_robot_manual->sock_fd,
+                (void *)&robot_data->robot_info_.joint_cmd_, sizeof(RobotData::JointCmd), 0,
+                (struct sockaddr *)&udp_client_robot_manual->addr_serv, udp_client_robot_manual->len);
             break;
 
         default:
@@ -113,7 +115,7 @@ int RobotSystem::ModeUpdate(){
             robot_data->robot_info_.robot_cmd_send_.motion_mode = 2; break;
         case AUTO:
             robot_data->robot_info_.robot_cmd_send_.motion_mode = 3; break;
-        case DEMONSTRATOR:
+        case MOVEL:
             robot_data->robot_info_.robot_cmd_send_.motion_mode = 4; break;
         case MOTION_CAPTURE:
             robot_data->robot_info_.robot_cmd_send_.motion_mode = 5; break;
