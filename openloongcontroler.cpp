@@ -128,6 +128,9 @@ void OpenLoongControler::on_pushButton_oneshot_manual_clicked()
     memcpy(&robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_exp_head,
            &robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head,
            sizeof(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head));
+    memcpy(&robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion,
+           &robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion,
+           sizeof(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion));
     qInfo()<<robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[0][0]<<" "<<
              robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[0][1]<<" "<<
              robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[0][2]<<" "<<

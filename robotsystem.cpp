@@ -81,7 +81,9 @@ void RobotSystem::UdpClientsRun(){
 //                   sizeof(robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_exp_hand));
 //            robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_vcap_hand[0] =
 //                    robot_data->robot_info_.motion_data_recieve_.vcap_data[0];
-
+//            memcpy(&robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion,
+//                   &robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion,
+//                   sizeof(robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion));
             sendto(udp_client_robot_manual->sock_fd,
                 (void *)&robot_data->robot_info_.joint_cmd_, sizeof(RobotData::JointCmd), 0,
                 (struct sockaddr *)&udp_client_robot_manual->addr_serv, udp_client_robot_manual->len);
