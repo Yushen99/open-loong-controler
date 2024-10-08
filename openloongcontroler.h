@@ -245,6 +245,8 @@ private slots:
 
     void on_pushButton_cartesion_step_set_clicked();
 
+    void on_pushButton_cartesion_step_set_rotation_clicked();
+
 private:
     Ui::OpenLoongControler *ui;
 
@@ -259,7 +261,7 @@ private:
     bool rgb = false;
     short mouse_control_arm=0;
     double rcp_k=1;// 步长倍率
-    float manual_step=0.02f, cartesion_step=1.0f;
+    float manual_step=0.5f, cartesion_step=1.0f, cartesion_step_rotation=0.05f;
     float rcp_step_rxyz=0.02f,rcp_step_x=0.02f,rcp_step_y=0.02f,rcp_step_z=0.02f;
     float delta_r_x = 0.0f, delta_r_y = 0.0f, delta_r_z = 10.0f;
     QList<int> pressedKeys;

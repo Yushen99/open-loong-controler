@@ -496,19 +496,15 @@ void OpenLoongControler::handleKeyPress(){
                     cout << "Key: " << key << endl;
                     cout << "Value: " << currentValue << endl;
                     if(map_rcp[key].col>2){
-                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step*rcp_k/50.0 : currentValue - cartesion_step*rcp_k/50.0;
-                    }else if(map_rcp[key].col==0){
-                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step*rcp_k : currentValue - cartesion_step*rcp_k;
-                    }else if(map_rcp[key].col==1){
-                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step*rcp_k : currentValue - cartesion_step*rcp_k;
-                    }else if(map_rcp[key].col==2){
-                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step*rcp_k : currentValue - cartesion_step*rcp_k;
+                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step_rotation : currentValue - cartesion_step_rotation;
+                    }else {
+                        currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step : currentValue - cartesion_step;
                     }
                     qInfo()<<currentValue;
                     robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[map_rcp[key].row][map_rcp[key].col] = currentValue;
                 }
         }
-        qInfo()<<robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][0]<<" "<<
+        qInfo()<<"cartesion send: "<<robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][0]<<" "<<
                  robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][1]<<" "<<
                  robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][2]<<" "<<
                  robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][3]<<" "<<
@@ -965,6 +961,12 @@ void OpenLoongControler::on_pushButton_cartesion_step_set_clicked()
 {
     cartesion_step = ui->lineEdit_cartesion_step->text().toFloat();
     ui->label_cartesion_step->setText(QString::number(cartesion_step));
+}
+
+void OpenLoongControler::on_pushButton_cartesion_step_set_rotation_clicked()
+{
+    cartesion_step_rotation = ui->lineEdit_cartesion_step_rotation->text().toFloat();
+    ui->label_cartesion_step_rotation->setText(QString::number(cartesion_step_rotation));
 }
 
 //demonstrator
@@ -1708,5 +1710,8 @@ bool OpenLoongControler::eventFilter(QObject *watched, QEvent *event)
     }
     return QWidget::eventFilter(watched, event);
 }
+
+
+
 
 
