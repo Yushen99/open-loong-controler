@@ -412,9 +412,9 @@ void OpenLoongControler::handleKeyPress(){
                     if (map_pos.find(key) != map_pos.end()) {
                         currentValue = robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[map_pos[key].row][map_pos[key].col];
                         cout << "Key: " << key << endl;
-                        cout << "Value: " << currentValue << endl;
+                        cout << "Arm Value Received: " << currentValue << endl;
                         currentValue = map_pos[key].add_minus == ADD ? currentValue + manual_step : currentValue - manual_step;
-                        //map_pos[key].label->setText(QString::number(currentValue));
+                        qInfo()<<"Arm Value Sent"<<currentValue;
                         robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[map_pos[key].row][map_pos[key].col] = currentValue;
                     }
                 }else if(pressedKeys.contains(Qt::Key_Control)){
@@ -440,12 +440,12 @@ void OpenLoongControler::handleKeyPress(){
                     if (map_pos_alt.find(key) != map_pos_alt.end()) {
                         currentValue = robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_hand[map_pos_alt[key].row][map_pos_alt[key].col];
                         cout << "Key: " << key << endl;
-                        cout << "Value: " << currentValue << endl;
+                        cout << "Hand Value Received: " << currentValue << endl;
 
                         currentValue = map_pos_alt[key].add_minus == ADD ? currentValue + manual_step/1000 : currentValue - manual_step/1000;
                         //currentValue = manual_step;
                         if(currentValue<0)currentValue=0;
-                        qInfo()<<currentValue;
+                        qInfo()<<"Hand Value Sent"<<currentValue;
                         robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_exp_hand[map_pos_alt[key].row][map_pos_alt[key].col] = currentValue;
                     }
                 }
@@ -494,13 +494,13 @@ void OpenLoongControler::handleKeyPress(){
                 if (map_rcp.find(key) != map_rcp.end()) {
                     currentValue = robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion[map_rcp[key].row][map_rcp[key].col];
                     cout << "Key: " << key << endl;
-                    cout << "Value: " << currentValue << endl;
+                    cout << "Cartesion Value Received: " << currentValue << endl;
                     if(map_rcp[key].col>2){
                         currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step_rotation : currentValue - cartesion_step_rotation;
                     }else {
                         currentValue = map_rcp[key].add_minus == ADD ? currentValue + cartesion_step : currentValue - cartesion_step;
                     }
-                    qInfo()<<currentValue;
+                    qInfo()<< "Cartesion Value Sent: "<<currentValue;
                     robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[map_rcp[key].row][map_rcp[key].col] = currentValue;
                 }
         }
@@ -967,6 +967,46 @@ void OpenLoongControler::on_pushButton_cartesion_step_set_rotation_clicked()
 {
     cartesion_step_rotation = ui->lineEdit_cartesion_step_rotation->text().toFloat();
     ui->label_cartesion_step_rotation->setText(QString::number(cartesion_step_rotation));
+}
+
+void OpenLoongControler::on_pushButton_arm_joint_set_l_clicked()
+{
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[0][0] = ui->lineEdit_arm_joint_set_l_1->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[0][1] = ui->lineEdit_arm_joint_set_l_2->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[0][2] = ui->lineEdit_arm_joint_set_l_3->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[0][3] = ui->lineEdit_arm_joint_set_l_4->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[0][4] = ui->lineEdit_arm_joint_set_l_5->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[0][5] = ui->lineEdit_arm_joint_set_l_6->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[0][6] = ui->lineEdit_arm_joint_set_l_7->text().toFloat();
+}
+
+void OpenLoongControler::on_pushButton_arm_joint_set_r_clicked()
+{
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[1][0] = ui->lineEdit_arm_joint_set_r_1->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[1][1] = ui->lineEdit_arm_joint_set_r_2->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[1][2] = ui->lineEdit_arm_joint_set_r_3->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[1][3] = ui->lineEdit_arm_joint_set_r_4->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[1][4] = ui->lineEdit_arm_joint_set_r_5->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[1][5] = ui->lineEdit_arm_joint_set_r_6->text().toFloat();
+    robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.ee_motion[1][6] = ui->lineEdit_arm_joint_set_r_7->text().toFloat();
+}
+
+void OpenLoongControler::on_pushButton_arm_joint_copy_clicked()
+{
+    ui->lineEdit_arm_joint_set_l_1->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][0]));
+    ui->lineEdit_arm_joint_set_l_2->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][1]));
+    ui->lineEdit_arm_joint_set_l_3->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][2]));
+    ui->lineEdit_arm_joint_set_l_4->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][3]));
+    ui->lineEdit_arm_joint_set_l_5->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][4]));
+    ui->lineEdit_arm_joint_set_l_6->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][5]));
+    ui->lineEdit_arm_joint_set_l_7->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[0][6]));
+    ui->lineEdit_arm_joint_set_r_1->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][0]));
+    ui->lineEdit_arm_joint_set_r_2->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][1]));
+    ui->lineEdit_arm_joint_set_r_3->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][2]));
+    ui->lineEdit_arm_joint_set_r_4->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][3]));
+    ui->lineEdit_arm_joint_set_r_5->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][4]));
+    ui->lineEdit_arm_joint_set_r_6->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][5]));
+    ui->lineEdit_arm_joint_set_r_7->setText(QString::number(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_arm[1][6]));
 }
 
 //demonstrator
@@ -1710,8 +1750,5 @@ bool OpenLoongControler::eventFilter(QObject *watched, QEvent *event)
     }
     return QWidget::eventFilter(watched, event);
 }
-
-
-
 
 

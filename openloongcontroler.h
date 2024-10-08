@@ -247,6 +247,12 @@ private slots:
 
     void on_pushButton_cartesion_step_set_rotation_clicked();
 
+    void on_pushButton_arm_joint_set_l_clicked();
+
+    void on_pushButton_arm_joint_set_r_clicked();
+
+    void on_pushButton_arm_joint_copy_clicked();
+
 private:
     Ui::OpenLoongControler *ui;
 
