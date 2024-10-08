@@ -101,6 +101,9 @@ void OpenLoongControler::on_pushButton_oneshot_demonstrator_clicked()
     memcpy(&robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.q_exp_head,
            &robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head,
            sizeof(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.joint_q_head));
+    memcpy(&robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion,
+           &robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion,
+           sizeof(robot_system->robot_data->robot_info_.robot_feedback_info_.basic_info.arm_cartesion));
 }
 
 void OpenLoongControler::on_pushButton_oneshot_idle_clicked()
@@ -505,6 +508,13 @@ void OpenLoongControler::handleKeyPress(){
                     robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[map_rcp[key].row][map_rcp[key].col] = currentValue;
                 }
         }
+        qInfo()<<robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][0]<<" "<<
+                 robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][1]<<" "<<
+                 robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][2]<<" "<<
+                 robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][3]<<" "<<
+                 robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][4]<<" "<<
+                 robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][5]<<" "<<
+                 robot_system->robot_data->robot_info_.joint_cmd_.basic_cmd_info.arm_cartesion[0][6]<<" ";
     }else{
         qInfo()<<"Manual key press in else mode! Warning!";
 //        for (int key : pressedKeys) {
@@ -527,7 +537,6 @@ void OpenLoongControler::handleKeyPress(){
 //                }
 //        }
     }
-
 }
 
 void OpenLoongControler::ShowInfomation(){

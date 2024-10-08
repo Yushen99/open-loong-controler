@@ -165,7 +165,7 @@ public:
     {
         int motion_mode;
         int running_mode;
-        int enable;
+        int enable = 0;
         int filter_enable;
         int joint_mode;  /////  0:POSITION, 1:VELOCITY, 2:CURRENT;
         int reset_error = 0;
