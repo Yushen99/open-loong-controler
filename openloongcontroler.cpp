@@ -922,7 +922,7 @@ void OpenLoongControler::ShowModeInfo(){
         case RobotSystem::AUTO:
             ui->label_motion_mode->setText("AUTO"); break;
         case RobotSystem::MOVEL:
-            ui->label_motion_mode->setText("DEMONSTRATOR"); break;
+            ui->label_motion_mode->setText("MOVEL"); break;
         case RobotSystem::MOTION_CAPTURE:
             ui->label_motion_mode->setText("MOTION_CAPTURE"); break;
         default:

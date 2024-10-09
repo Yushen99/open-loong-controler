@@ -69,6 +69,7 @@ int UdpServer::rcv_calback(void *package, uint16_t port){
                 memcpy(&robot_data_->robot_info_.robot_state_,buf,sizeof(RobotData::RobotState));
                 if(robot_data_->robot_info_.robot_state_.reset_feedback == 1 && robot_data_->robot_info_.robot_cmd_send_.reset_error == 1){
                     robot_data_->robot_info_.robot_cmd_send_.reset_error = 0;
+                    std::cout<<"reset error succeeded!"<<std::endl;
                 }
                 break;
             case PORT_ROBOT_SERVO_INFO:
